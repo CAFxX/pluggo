@@ -1,13 +1,27 @@
+// Package pluggo provides a compile-time, in-process plugin framework. It
+// allows to define interface-based extension points in your code, so that users
+// of your code can plug in their modifications at compile time while keeping
+// the application code and plugin code in completely separated packages or
+// repositories.
 package pluggo
 
 import (
 	"fmt"
+	"reflect"
 	"sync"
 )
 
-// Factory is the signature of functions that returns instances of the interface
-// to be used at the extension points.
+// Factory functions should return instances of the interface appropriate for
+// the extension point they have been registered for. The pluggo framework
+// enforces no rules regarding the kind of interface factories should return:
+// this is delegated to the contract between application and plugins.
 type Factory func() interface{}
+
+// Stoppable is an interface that plugins are encouraged to implement to be
+// notified that the plugin instance is not needed anymore
+type Stoppable interface {
+	StopPlugin()
+}
 
 var plugins = make(map[string]Factory)
 var lock = sync.RWMutex{}
@@ -35,4 +49,22 @@ func Get(name string) interface{} {
 		return nil
 	}
 	return factory()
+}
+
+// GetImpls returns a list of factory names that can instantiate implementations
+// of the provided interface
+func GetImpls(Interface reflect.Type) []string {
+	var impls []string
+	lock.RLock()
+	for name, factory := range plugins {
+		p := factory()
+		if reflect.TypeOf(p).Implements(Interface) {
+			impls = append(impls, name)
+		}
+		if p.(Stoppable) != nil {
+			go p.(Stoppable).StopPlugin()
+		}
+	}
+	lock.RUnlock()
+	return impls
 }
