@@ -1,12 +1,16 @@
 # pluggo
 Golang compile-time, in-process plugin framework
 
+[![GoDoc](https://godoc.org/github.com/CAFxX/pluggo?status.svg)](https://godoc.org/github.com/CAFxX/pluggo)
+
 ## Purpose
 Pluggo allows you to define interface-based extension points in your code, so
 that users of your code can plug in their modifications at compile time while
 keeping the application code and plugin code in completely separated packages
-and repositories. Compared to RPC/IPC approaches, plugins using this framework
-run in the same process as the application, with no IPC/RPC overhead.
+and repositories.
+
+Compared to RPC/IPC approaches, plugins using this framework run in the same
+process as the application with no IPC/RPC overhead.
 
 ## How it works
 Similarly as how `database/sql` drivers registers themselves: there's a
@@ -14,7 +18,7 @@ Similarly as how `database/sql` drivers registers themselves: there's a
 plugins `Register` their factories for the appropriate extension points.
 Application code at each extension point requests to the registry instances of
 the plugin using `Get`. Application and plugins are then compiled and linked
-together in the same executable with the `multibuild` tool.
+together in the same executable with the `[multibuild](cmd/multibuild)` tool.
 
 ## Examples
 
@@ -73,8 +77,8 @@ packages (the plugins).
 $ multibuild appMainPkg pluginPkg1 pluginPkg2 ...
 ```
 
-You can have a look at the [sample](sample/README.md) directory for a
-ready-to-run example.
+You can have a look at the [sample](sample) directory for a ready-to-run
+example.
 
 ### Factory pattern
 
