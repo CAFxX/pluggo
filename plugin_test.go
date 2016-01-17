@@ -35,3 +35,10 @@ func TestGet(t *testing.T) {
 		t.Fatal("plugin returned unexpected instance")
 	}
 }
+
+func TestGetUnknown(t *testing.T) {
+	ep := Get("ep-unknown")
+	if ep != nil {
+		t.Fatal("unexpected plugin instance returned for unknown extension point")
+	}
+}
