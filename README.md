@@ -2,6 +2,7 @@
 Golang compile-time, in-process plugin framework
 
 [![GoDoc](https://godoc.org/github.com/CAFxX/pluggo?status.svg)](https://godoc.org/github.com/CAFxX/pluggo)
+[![Build Status](https://travis-ci.org/CAFxX/pluggo.svg?branch=master)](https://travis-ci.org/CAFxX/pluggo)
 
 ## Purpose
 Pluggo allows you to define interface-based extension points in your code, so
