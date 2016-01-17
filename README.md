@@ -111,10 +111,10 @@ Sometimes the functionalities you need in a upstream application or library are
 not useful in the context of the upstream project. Sure, you can fork the
 upstream but that creates a great deal of maintenance burden.
 
-Extension points overhead have negligible performance overhead unless used in
-very tight loops (where, most likely, you shouldn't use them anyway). Having
-extensions points defined upstream may prove less controversial and will allow
-any interested users to easily provide their own extensions.
+Extension points have negligible performance overhead unless used in very tight
+loops (where, most likely, you shouldn't use them anyway). Having extensions
+points defined upstream may prove less controversial and will allow any
+interested users to easily provide their own extensions.
 
 ### Can it load plugins at runtime?
 Short answer: no.
@@ -123,7 +123,7 @@ Longer answer: something could be hacked together using a mixture of this
 approach, CGO and LD_PRELOAD. But nothing of the sort has been implemented here:
 for now you can only load plugins at compile time.
 
-That being said, you can link multiple plugins at compile times and then choose
+That being said, you can link multiple plugins at compile time and then choose
 which ones to use at runtime. See the factory pattern above for a generic
 example of how to do it.
 
