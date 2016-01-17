@@ -1,19 +1,24 @@
-# Pluggo
+# pluggo
 Golang compile-time, in-process plugin framework
 
 ## Purpose
 Pluggo allows you to define interface-based extension points in your code, so
-that users of your code can plug in their modifications at compile time without
-modifying your code.
+that users of your code can plug in their modifications at compile time while
+keeping the application code and plugin code in completely separated packages
+and repositories. Compared to RPC/IPC approaches, plugins using this framework
+run in the same process as the application, with no IPC/RPC overhead.
 
 ## How it works
 Similarly as how `database/sql` drivers registers themselves: there's a
 "extension point registry" (just a `map[string]func() interface{}`) where
 plugins `Register` their factories for the appropriate extension points.
 Application code at each extension point requests to the registry instances of
-the plugin using `Get`.
+the plugin using `Get`. Application and plugins are then compiled and linked
+together in the same executable with the `multibuild` tool.
 
-## Example
+## Examples
+
+### Extension point pattern
 Let's say you have a place in your code where you greet the user:
 
 ```
@@ -71,7 +76,41 @@ $ multibuild appMainPkg pluginPkg1 pluginPkg2 ...
 You can have a look at the [sample](sample/README.md) directory for a
 ready-to-run example.
 
+### Factory pattern
+
+Whereas in the extension point pattern plugin code is responsible to register
+for a specific extension point, in the factory pattern plugins register
+themselves with a unique name and choosing which one to use for a certain
+extension point is delegated to the application.
+
+In the previous example, this would mean replacing the plugin instantiation code
+from:
+
+```
+userGreeter := pluggo.Get("userGreeter").(Greeter)
+```
+
+to
+
+```
+userGreeter := pluggo.Get(conf.plugins.userGreeter).(Greeter)
+```
+
+where `conf.plugins.userGreeter` will likely come from the configuration
+mechanism in use by your application. This allows to choose which plugin to use
+at runtime.
+
 ## FAQ
+
+### Why did you write this?
+Sometimes the functionalities you need in a upstream application or library are
+not useful in the context of the upstream project. Sure, you can fork the
+upstream but that creates a great deal of maintenance burden.
+
+Extension points overhead have negligible performance overhead unless used in
+very tight loops (where, most likely, you shouldn't use them anyway). Having
+extensions points defined upstream may prove less controversial and will allow
+any interested users to easily provide their own extensions.
 
 ### Can it load plugins at runtime?
 Short answer: no.
@@ -81,11 +120,18 @@ approach, CGO and LD_PRELOAD. But nothing of the sort has been implemented here:
 for now you can only load plugins at compile time.
 
 That being said, you can link multiple plugins at compile times and then choose
-which ones to use at runtime.
+which ones to use at runtime. See the factory pattern above for a generic
+example of how to do it.
+
+While not being able to load plugins at runtime is a limitation, it has some
+clear upsides: you are effectively vendoring plugins so you sidestep all kind
+of version incompatibility issues (DLL hell, anyone?), you maintain the "single
+binary" nature of compiled Go programs and, most importantly, all Go tooling
+keep working correctly.
 
 ### Can I supply some parameters/configurations to a plugin?
 Not right now, but I'm considering it. I'd like to avoid feature creep if
 possible, so I'm taking some time to come up with a minimal yet flexible design.
 
 ## License
-MIT
+[MIT](LICENSE)
