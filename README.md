@@ -18,7 +18,7 @@ Similarly as how `database/sql` drivers registers themselves: there's a
 plugins `Register` their factories for the appropriate extension points.
 Application code at each extension point requests to the registry instances of
 the plugin using `Get`. Application and plugins are then compiled and linked
-together in the same executable with the `[multibuild](cmd/multibuild)` tool.
+together in the same executable with the [`multibuild`](cmd/multibuild) tool.
 
 ## Examples
 
