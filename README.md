@@ -83,6 +83,9 @@ $ multibuild appMainPkg pluginPkg1 pluginPkg2 ...
 You can have a look at the [sample](sample) directory for a ready-to-run
 example.
 
+Note that if a unknown extension point name (or `""`) is requested, `Get` will
+simply return `nil`.
+
 ### Factory pattern
 
 Whereas in the extension point pattern plugin code is responsible to register
@@ -105,7 +108,8 @@ userGreeter := pluggo.Get(conf.plugins.userGreeter).(Greeter)
 
 where `conf.plugins.userGreeter` will likely come from the configuration
 mechanism in use by your application. This allows to choose which plugin to use
-at runtime.
+at runtime. Note that if a unknown plugin name (or `""`) is requested, `Get`
+will simply return `nil`.
 
 ## FAQ
 
@@ -140,11 +144,12 @@ working correctly (test, pprof, etc.).
 Plugins all only registered at process initialization time, but normally this is
 really quick (it boils down to inserting one entry per factory in a map).
 
-Plugin instantiation ("loading") on the other side is delegated to interface
-between the calling code (the application) and plugins, is triggered by the
-calling code and it may therefore never happen if the calling code decides that
-a certain plugin is not needed (normally in response to configuration or user
-input). See the factory pattern above for a generic example of how to do it.
+Plugin instantiation ("loading") on the other side is delegated to the interface
+between the calling code (the application) and plugins. Because instantiation
+is triggered by the calling code, it may never happen for a certain plugin if
+the calling code decides that it is not needed (normally in response to
+configuration or user input). See the factory pattern above for a generic
+example of how to do it.
 
 Similarly, plugin unloading is delegated to the interface between the calling
 code and the plugins: if a plugin is able to shutdown and clean after itself
