@@ -15,9 +15,9 @@ Compared to RPC/IPC approaches, plugins using this framework run in the same
 process as the application with no IPC/RPC overhead.
 
 ## How it works
-Similarly as how `database/sql` drivers registers themselves: there's a
-"extension point registry" (just a `map[string]func() interface{}`) where
-plugins `Register` their factories for the appropriate extension points.
+Similarly as how `database/sql` drivers registers themselves: pluggo keeps an
+internal factory registry (just a `map[string]func() interface{}`) where
+plugins `Register` their factories.
 Application code at each extension point requests to the registry instances of
 the plugin using `Get`. Application and plugins are then compiled and linked
 together in the same executable with the [`multibuild`](cmd/multibuild) tool.

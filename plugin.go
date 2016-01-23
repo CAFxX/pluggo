@@ -13,15 +13,20 @@ import (
 // Factory functions should return instances of the interface appropriate for
 // the extension point they have been registered for. The pluggo framework
 // enforces no rules regarding the kind of interface factories should return:
-// this is delegated to the contract between application and plugins.
+// this is delegated to the contract between calling code and plugins.
 type Factory func() interface{}
 
 var plugins = make(map[string]Factory)
 var lock = sync.RWMutex{}
 
 // Register should be called from a plugin init() function to register a Factory
-// for the named extension point. It is illegal to register more than one
-// Factory for the same extension point.
+// for the named extension point. Naming of the extension points is delegated to
+// the contract between calling code and plugins. It is illegal to register more
+// than one Factory for the same extension point.
+//
+// It is strongly recommended that plugins perform no initialization in init()
+// aside from registering with pluggo. Any initialization procedures should be
+// deferred at least until the first call to the Factory function.
 func Register(name string, f Factory) error {
 	lock.Lock()
 	defer lock.Unlock()
@@ -33,8 +38,10 @@ func Register(name string, f Factory) error {
 }
 
 // Get is used to get an instance of the interface returned by the Factory
-// registered for the specified extension point. It is safe to call Get
-// concurrently from multiple goroutines.
+// registered for the specified extension point. The instantiation semantics
+// are not defined by pluggo: they should be defined by the contract between
+// calling code and plugins. It is safe to call Get concurrently from multiple
+// goroutines.
 func Get(name string) interface{} {
 	lock.RLock()
 	factory := plugins[name]
