@@ -45,10 +45,11 @@ then you change your greeting code to:
 
 ```
 userGreeter := pluggo.Get("userGreeter").(Greeter)
-if userGreeter == nil {
-  fmt.Printf("Hello %s!", username) // behavior in case no plugin was defined
+
+if userGreeter != nil {
+  fmt.Print(userGreeter.Greet(username))
 } else {
-  fmt.Print(userGreeter(username))
+  fmt.Printf("Hello %s!", username) // behavior in case no plugin was defined
 }
 ```
 
@@ -118,26 +119,100 @@ loops (where, most likely, you shouldn't use them anyway). Having extensions
 points defined upstream may prove less controversial and will allow any
 interested users to easily provide their own extensions.
 
-### Can it load plugins at runtime?
-Short answer: no.
+### Can it dynamically link/unlink plugins at runtime?
+Short answer: no. Plugins are linked at compile-time and can't be unlinked.
 
 Longer answer: something could be hacked together using a mixture of this
 approach, CGO and LD_PRELOAD. But nothing of the sort has been implemented here:
 for now you can only load plugins at compile time.
 
 That being said, you can link multiple plugins at compile time and then choose
-which ones to use at runtime. See the factory pattern above for a generic
-example of how to do it.
+which ones to load at runtime. See the "Can it dynamically load/unload plugins
+at runtime?" question below.
 
-While not being able to load plugins at runtime is a limitation, it has some
+While not being able to link plugins at runtime is a limitation, it has some
 clear upsides: you are effectively vendoring plugins so you sidestep all kind
 of version incompatibility issues (DLL hell, anyone?), you maintain the "single
-binary" nature of compiled Go programs and, most importantly, all Go tooling
-keep working correctly.
+binary" nature of compiled Go programs and, most importantly, all Go tools keep
+working correctly (test, pprof, etc.).
+
+### Can it dynamically load/unload plugins at runtime?
+Plugins all only registered at process initialization time, but normally this is
+really quick (it boils down to inserting one entry per factory in a map).
+
+Plugin instantiation ("loading") on the other side is delegated to interface
+between the calling code (the application) and plugins, is triggered by the
+calling code and it may therefore never happen if the calling code decides that
+a certain plugin is not needed (normally in response to configuration or user
+input). See the factory pattern above for a generic example of how to do it.
+
+Similarly, plugin unloading is delegated to the interface between the calling
+code and the plugins: if a plugin is able to shutdown and clean after itself
+(e.g. terminate its goroutines, remove global state, etc.) all memory used by
+the plugin instance should be eventually reclaimed by the go GC.
 
 ### Can I supply some parameters/configurations to a plugin?
-Not right now, but I'm considering it. I'd like to avoid feature creep if
-possible, so I'm taking some time to come up with a minimal yet flexible design.
+It's not part of the framework right now, but I'm considering it. I'd like to
+avoid feature creep if possible, so I'm taking some time to come up with a
+minimal yet flexible design.
+
+Keep in mind that nothing prevents you from designing the interface that plugins
+should implement to enable providing configuration to plugin implementations.
+
+Recycling the `Greeter` example above, you could add a `Init` functions that has
+to be called once after instantiation:
+
+```
+type Greeter interface {
+  Init(conf GreeterConfig)
+  Greet(who string) string
+}
+
+type GreeterConfig struct {
+  // ...
+}
+```
+
+```
+userGreeter := pluggo.Get("userGreeter").(Greeter)
+
+if userGreeter != nil {
+  err := userGreeter.Init(userGreeterConfig)
+  if err != nil {
+    // handle error
+  }
+
+  fmt.Print(userGreeter.Greet(username))
+} else {
+  fmt.Printf("Hello %s!", username) // behavior in case no plugin was defined
+}
+```
+
+### Do I have to instantiate the plugin every time I use it?
+It depends on the contract between calling code and plugins. Pluggo does not
+dictate any convention about this: if you define the contract to be "the plugin
+is instantiated only once per process" you can definitely instantiate it once
+and reuse it multiple times.
+
+### Isn't all of this very low-level?
+Yes, it is. Pluggo is just the foundation of a plugin system right now. But
+because every additional feature risks being very opinionated I'm inclined to
+keep this library small and well-scoped and build a higher-level framework on
+top of it.
+
+A possible way forward is to define a set of strictly optional interfaces that
+plugins can choose to implement to respond to standard plugin lifecycle events.
+This would be very generic and completely optional.
+
+## Potential directions
+- Implement lifecycle interfaces
+  - start plugin
+  - configure plugin
+  - enumerate plugin interfaces
+  - start plugin instance
+  - stop plugin instance
+  - stop plugin
+- Implement plugin enumeration
 
 ## License
 [MIT](LICENSE)

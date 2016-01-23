@@ -33,7 +33,8 @@ func Register(name string, f Factory) error {
 }
 
 // Get is used to get an instance of the interface returned by the Factory
-// registered for the specified extension point.
+// registered for the specified extension point. It is safe to call Get
+// concurrently from multiple goroutines.
 func Get(name string) interface{} {
 	lock.RLock()
 	factory := plugins[name]
